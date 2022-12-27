@@ -37,7 +37,7 @@ router.route("/test").get((_: Request, res: Response) => {
 // auth
 // key -> boolean
 router.route("/auth/:key").get((req: Request, res: Response) => {
-    if(req.params.key == process.env.PASSWORD) {
+    if(req.params.key === process.env.PASSWORD) {
         res.json({status: "Correct Password", auth: true});
     } else {
         res.json({status: "Incorrect Password", auth: false});
@@ -53,14 +53,14 @@ router.route("/get/judge/:apikey/:judgeId").get((req: Request, res: Response) =>
     } else if (!req.params.judgeId) {
         res.json({status: "No judge given"});
     } else {
-        if(req.params.apikey!=process.env.APIKEY) {
+        if(req.params.apikey!==process.env.APIKEY) {
             res.json({status: "Incorrect API key"});
         } else {
             dbConnect
             .collection("judges")
             .findOne({_id: new ObjectId(req.params.judgeId)}, (err: Error, result: Response) => {
                 if (err) throw err;
-                res.json({result: result, status: `Found judge ${req.params.judgeId}`});
+                res.json({result, status: `Found judge ${req.params.judgeId}`});
             });
         }
     }
@@ -77,15 +77,15 @@ router.route("/get/alljudges/:apikey").get((req: Request, res: Response) => {
     if(!req.params.apikey) {
         res.json({status: "No API key"});
     } else {
-        if(req.params.apikey!=process.env.APIKEY) {
+        if(req.params.apikey!==process.env.APIKEY) {
             res.json({status: "Incorrect API key"});
         } else {
             dbConnect
             .collection("judges")
             .find({})
-            .toArray(function (err: Error, result: Response) {
+            .toArray((err: Error, result: Response) => {
                 if (err) throw err;
-                res.json({result: result, status: `Found all judges`});
+                res.json({result, status: `Found all judges`});
             });
         }
     }
@@ -98,7 +98,7 @@ router.route("/create/judge").post(async (req: Request, res: Response) => {
     if(!req.body.apikey) {
         res.json({status: "No API key"});
     } else {
-        if(req.body.apikey!=process.env.APIKEY) {
+        if(req.body.apikey!==process.env.APIKEY) {
             res.json({status: "Incorrect API key"});
         } else {
             const judge: Judge = {
@@ -108,7 +108,7 @@ router.route("/create/judge").post(async (req: Request, res: Response) => {
                 totalEarnedPoints: 0,
                 totalPossiblePoints: 0,
             }
-        
+
             dbConnect.collection("judges").insertOne(judge, (err: Error, resp: Response) => {
                 if (err) throw err;
                 res.json({result: resp, status: `Created judge ${judge.name}`});
@@ -124,11 +124,11 @@ router.route("/update/judge/:apikey/:judgeid").post(async (req: Request, res: Re
     if(!req.params.apikey) {
         res.json({status: "No API key"});
     } else {
-        if(req.params.apikey!=process.env.APIKEY) {
+        if(req.params.apikey!==process.env.APIKEY) {
             res.json({status: "Incorrect API key"});
         } else {
-            let query = {_id: new ObjectId(req.params.judgeid)};
-            let newEvaluation: Evaluation = {
+            const query = {_id: new ObjectId(req.params.judgeid)};
+            const newEvaluation: Evaluation = {
                 tournamentName: req.body.tName,
                 roundName: req.body.rName, // e.g., Round 1 Flight A etc.
                 isPrelim: req.body.isPrelim,
@@ -147,13 +147,13 @@ router.route("/update/judge/:apikey/:judgeid").post(async (req: Request, res: Re
             .findOne(query, (err: Error, result: any) => {
                 if (err) throw err;
                 // i have that judge now
-                let judgeEvalsCurrent = result.evaluations;
+                const judgeEvalsCurrent = result.evaluations;
                 judgeEvalsCurrent.push(newEvaluation);
 
                 dbConnect
                 .collection("judges")
-                .updateOne(query, {$set: {evaluations: judgeEvalsCurrent, totalEarnedPoints: result.totalEarnedPoints+(req.body.decision+req.body.comparison+req.body.citation+req.body.coverage+req.body.bias), totalPossiblePoints: result.totalPossiblePoints+5}}, (err: Error, resp: Response) => {
-                    if (err) throw err;
+                .updateOne(query, {$set: {evaluations: judgeEvalsCurrent, totalEarnedPoints: result.totalEarnedPoints+(req.body.decision+req.body.comparison+req.body.citation+req.body.coverage+req.body.bias), totalPossiblePoints: result.totalPossiblePoints+5}}, (error2: Error, resp: Response) => {
+                    if (error2) throw error2;
                     res.json({result: resp, status: `Updated judge ${req.params.judgeid}`});
                 });
             });
@@ -168,10 +168,10 @@ router.route("/delete/judge/:apikey").delete(async (req: Request, res: Response)
     if(!req.params.apikey) {
         res.json({status: "No API key"});
     } else {
-        if(req.params.apikey!=process.env.APIKEY) {
+        if(req.params.apikey!==process.env.APIKEY) {
             res.json({status: "Incorrect API key"});
         } else {
-            let query = {_id: new ObjectId(req.body.judgeid)};
+            const query = {_id: new ObjectId(req.body.judgeid)};
             dbConnect
             .collection("judges")
             .deleteOne(query, (err: Error, obj: any) => {
@@ -187,28 +187,28 @@ router.route("/delete/evaluation/:apikey").delete(async (req: Request, res: Resp
     if(!req.params.apikey) {
         res.json({status: "No API key"});
     } else {
-        if(req.params.apikey!=process.env.APIKEY) {
+        if(req.params.apikey!==process.env.APIKEY) {
             res.json({status: "Incorrect API key"});
         } else {
-            let query = {_id: new ObjectId(req.body.judgeid)};
+            const query = {_id: new ObjectId(req.body.judgeid)};
 
             dbConnect
             .collection("judges")
             .findOne(query, (err: Error, result: any) => {
                 if (err) throw err;
                 // i have that judge now
-                let judgeEvalsCurrent = result.evaluations;
-                let j: Evaluation[] = [];
+                const judgeEvalsCurrent = result.evaluations;
+                const j: Evaluation[] = [];
                 for(let i = 0; i < judgeEvalsCurrent.length; i ++) {
-                    if(i != req.body.index) {
+                    if(i !== req.body.index) {
                         j.push(judgeEvalsCurrent[i]);
                     }
                 }
 
                 dbConnect
                 .collection("judges")
-                .updateOne(query, {$set: {evaluations: j}}, (err: Error, resp: Response) => {
-                    if (err) throw err;
+                .updateOne(query, {$set: {evaluations: j}}, (error2: Error, resp: Response) => {
+                    if (error2) throw error2;
                     res.json({result: resp, status: `Deleted evaluation ${req.body.index} of judge ${req.body.judgeid}`});
                 });
             });

@@ -20,5 +20,5 @@ app.use(appRoutes);
 app.listen(port, () => {
   // perform a database connection when server starts
   dbo.connectToServer();
-  console.log(`Server is running on port: ${port}`);
+  // console.log(`Server is running on port: ${port}`);
 });
