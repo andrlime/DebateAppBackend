@@ -147,7 +147,6 @@ router.route("/update/judge/:apikey/:judgeid").post(async (req: Request, res: Re
             .findOne(query, (err: Error, result: any) => {
                 if (err) throw err;
                 // i have that judge now
-                console.log(result);
                 let judgeEvalsCurrent = result.evaluations;
                 judgeEvalsCurrent.push(newEvaluation);
 
@@ -156,6 +155,61 @@ router.route("/update/judge/:apikey/:judgeid").post(async (req: Request, res: Re
                 .updateOne(query, {$set: {evaluations: judgeEvalsCurrent, totalEarnedPoints: result.totalEarnedPoints+(req.body.decision+req.body.comparison+req.body.citation+req.body.coverage+req.body.bias), totalPossiblePoints: result.totalPossiblePoints+5}}, (err: Error, resp: Response) => {
                     if (err) throw err;
                     res.json({result: resp, status: `Updated judge ${req.params.judgeid}`});
+                });
+            });
+        }
+    }
+});
+
+// routes to delete
+router.route("/delete/judge/:apikey").delete(async (req: Request, res: Response) => {
+    // body: judge id
+    const dbConnect = dbo.getDb();
+    if(!req.params.apikey) {
+        res.json({status: "No API key"});
+    } else {
+        if(req.params.apikey!=process.env.APIKEY) {
+            res.json({status: "Incorrect API key"});
+        } else {
+            let query = {_id: new ObjectId(req.body.judgeid)};
+            dbConnect
+            .collection("judges")
+            .deleteOne(query, (err: Error, obj: any) => {
+                if(!err) res.json({status: `Deleted judge ${req.body.judgeid}`});
+            });
+        }
+    }
+});
+
+router.route("/delete/evaluation/:apikey").delete(async (req: Request, res: Response) => {
+    // body: judge id, eval index
+    const dbConnect = dbo.getDb();
+    if(!req.params.apikey) {
+        res.json({status: "No API key"});
+    } else {
+        if(req.params.apikey!=process.env.APIKEY) {
+            res.json({status: "Incorrect API key"});
+        } else {
+            let query = {_id: new ObjectId(req.body.judgeid)};
+
+            dbConnect
+            .collection("judges")
+            .findOne(query, (err: Error, result: any) => {
+                if (err) throw err;
+                // i have that judge now
+                let judgeEvalsCurrent = result.evaluations;
+                let j: Evaluation[] = [];
+                for(let i = 0; i < judgeEvalsCurrent.length; i ++) {
+                    if(i != req.body.index) {
+                        j.push(judgeEvalsCurrent[i]);
+                    }
+                }
+
+                dbConnect
+                .collection("judges")
+                .updateOne(query, {$set: {evaluations: j}}, (err: Error, resp: Response) => {
+                    if (err) throw err;
+                    res.json({result: resp, status: `Deleted evaluation ${req.body.index} of judge ${req.body.judgeid}`});
                 });
             });
         }
