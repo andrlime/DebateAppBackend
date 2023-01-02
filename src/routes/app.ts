@@ -6,13 +6,12 @@ import { ObjectId } from "mongodb";
 type Judge = {
     name: string,
     email: string,
-    evaluations: Evaluation[],
-    totalEarnedPoints: number,
-    totalPossiblePoints: number
-}
+    evaluations: Evaluation[]
+};
 
 type Evaluation = {
     tournamentName: string,
+    date: Date | string,
     roundName: string, // e.g., Round 1 Flight A etc.
     isPrelim: boolean,
     isImprovement: boolean,
@@ -21,8 +20,7 @@ type Evaluation = {
     citation: number,
     coverage: number,
     bias: number,
-    weight: number,
-    date: Date
+    weight: number
 }
 
 dotenv.config();
@@ -104,9 +102,7 @@ router.route("/create/judge").post(async (req: Request, res: Response) => {
             const judge: Judge = {
                 name: req.body.name,
                 email: req.body.email,
-                evaluations: [],
-                totalEarnedPoints: 0,
-                totalPossiblePoints: 0,
+                evaluations: []
             }
 
             dbConnect.collection("judges").insertOne(judge, (err: Error, resp: Response) => {
@@ -152,7 +148,7 @@ router.route("/update/judge/:apikey/:judgeid").post(async (req: Request, res: Re
 
                 dbConnect
                 .collection("judges")
-                .updateOne(query, {$set: {evaluations: judgeEvalsCurrent, totalEarnedPoints: result.totalEarnedPoints+(req.body.decision+req.body.comparison+req.body.citation+req.body.coverage+req.body.bias), totalPossiblePoints: result.totalPossiblePoints+5}}, (error2: Error, resp: Response) => {
+                .updateOne(query, {$set: {evaluations: judgeEvalsCurrent}}, (error2: Error, resp: Response) => {
                     if (error2) throw error2;
                     res.json({result: resp, status: `Updated judge ${req.params.judgeid}`});
                 });
