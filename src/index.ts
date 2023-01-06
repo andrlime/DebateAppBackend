@@ -9,9 +9,11 @@ const dbo = conn;
 const app = express();
 const port = process.env.PORT || 4123;
 
-app.use(cors({
-  origin: '*'
-}));
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 app.use(express.json());
 app.use(appRoutes);
 

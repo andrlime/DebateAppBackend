@@ -7,18 +7,17 @@ const client = new MongoClient(CONN_URI);
 let _db: any;
 
 export default {
-  connectToServer () {
+  connectToServer() {
     client.connect((err, db) => {
       // Verify we got a good "db" object
-      if (db)
-      {
+      if (db) {
         _db = db.db("judges");
       }
       return 1;
     });
   },
 
-  getDb () {
+  getDb() {
     return _db;
   },
 };
