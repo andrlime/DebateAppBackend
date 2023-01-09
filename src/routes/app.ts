@@ -40,7 +40,6 @@ router.route("/authy").post((req: Request, res: Response) => {
     let un = req.body.username;
     let pw = req.body.password;
     let hash = createHash('sha256').update(`${un}${pw}`).digest('hex');
-    console.log(`${un}${pw} - ${hash}`);
 
     dbConnect.collection("auth").insertOne({username: un, password: hash}, (err: Error, resp: Response) => {
         if (err) throw err;
@@ -57,7 +56,6 @@ router.route("/authy/:un/:pw").get((req: Request, res: Response) => {
     .collection("auth")
     .findOne({username: un, password: hash}, (err: Error, result: Response) => {
         if (err) throw err;
-        console.log(result);
         if(result) {
             res.json({result: 1, status: `Found account ${req.params.un}`});
         } else {
