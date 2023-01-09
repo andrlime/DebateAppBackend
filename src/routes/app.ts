@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import conn from "../db/conn";
 import dotenv from "dotenv";
 import { ObjectId } from "mongodb";
+import { createHash } from "crypto";
 
 type Judge = {
     name: string,
@@ -33,6 +34,38 @@ router.route("/test").get((_: Request, res: Response) => {
 });
 
 // auth
+// new auth
+router.route("/authy").post((req: Request, res: Response) => {
+    const dbConnect = dbo.getDb();
+    let un = req.body.username;
+    let pw = req.body.password;
+    let hash = createHash('sha256').update(`${un}${pw}`).digest('hex');
+    console.log(`${un}${pw} - ${hash}`);
+
+    dbConnect.collection("auth").insertOne({username: un, password: hash}, (err: Error, resp: Response) => {
+        if (err) throw err;
+        res.json({result: hash, status: `Created account ${un}`}); // usernames are not exclusive until i implement that
+    });
+});
+
+router.route("/authy/:un/:pw").get((req: Request, res: Response) => {
+    const dbConnect = dbo.getDb();
+    let un = req.params.un;
+    let pw = req.params.pw;
+    let hash = createHash('sha256').update(`${un}${pw}`).digest('hex');
+    dbConnect  
+    .collection("auth")
+    .findOne({username: un, password: hash}, (err: Error, result: Response) => {
+        if (err) throw err;
+        console.log(result);
+        if(result) {
+            res.json({result: 1, status: `Found account ${req.params.un}`});
+        } else {
+            res.json({result: -1, status: `Not valid account`});
+        }
+    });
+});
+
 // key -> boolean
 router.route("/auth/:key").get((req: Request, res: Response) => {
     if(req.params.key === process.env.PASSWORD) {
