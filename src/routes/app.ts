@@ -36,32 +36,40 @@ router.route("/test").get((_: Request, res: Response) => {
 // auth
 // new auth
 router.route("/authy").post((req: Request, res: Response) => {
-    const dbConnect = dbo.getDb();
-    let un = req.body.username;
-    let pw = req.body.password;
-    let hash = createHash('sha256').update(`${un}${pw}`).digest('hex');
+  const dbConnect = dbo.getDb();
+  let un = req.body.username;
+  let pw = req.body.password;
+  let hash = createHash("sha256").update(`${un}${pw}`).digest("hex");
 
-    dbConnect.collection("auth").insertOne({username: un, password: hash}, (err: Error, resp: Response) => {
+  dbConnect
+    .collection("auth")
+    .insertOne(
+      { username: un, password: hash },
+      (err: Error, resp: Response) => {
         if (err) throw err;
-        res.json({result: hash, status: `Created account ${un}`}); // usernames are not exclusive until i implement that
-    });
+        res.json({ result: hash, status: `Created account ${un}` }); // usernames are not exclusive until i implement that
+      }
+    );
 });
 
 router.route("/authy/:un/:pw").get((req: Request, res: Response) => {
-    const dbConnect = dbo.getDb();
-    let un = req.params.un;
-    let pw = req.params.pw;
-    let hash = createHash('sha256').update(`${un}${pw}`).digest('hex');
-    dbConnect  
+  const dbConnect = dbo.getDb();
+  let un = req.params.un;
+  let pw = req.params.pw;
+  let hash = createHash("sha256").update(`${un}${pw}`).digest("hex");
+  dbConnect
     .collection("auth")
-    .findOne({username: un, password: hash}, (err: Error, result: Response) => {
+    .findOne(
+      { username: un, password: hash },
+      (err: Error, result: Response) => {
         if (err) throw err;
-        if(result) {
-            res.json({result: 1, status: `Found account ${req.params.un}`});
+        if (result) {
+          res.json({ result: 1, status: `Found account ${req.params.un}` });
         } else {
-            res.json({result: -1, status: `Not valid account`});
+          res.json({ result: -1, status: `Not valid account` });
         }
-    });
+      }
+    );
 });
 
 // key -> boolean
