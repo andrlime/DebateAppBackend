@@ -12,6 +12,7 @@ type Judge = {
 
 type Evaluation = {
   tournamentName: string;
+  divisionName: string;
   date: Date | string;
   roundName: string; // e.g., Round 1 Flight A etc.
   isPrelim: boolean;
@@ -166,6 +167,7 @@ router
         const query = { _id: new ObjectId(req.params.judgeid) };
         const newEvaluation: Evaluation = {
           tournamentName: req.body.tName,
+          divisionName: req.body.dName || "N/A",
           roundName: req.body.rName, // e.g., Round 1 Flight A etc.
           isPrelim: req.body.isPrelim,
           isImprovement: req.body.isImprovement,
