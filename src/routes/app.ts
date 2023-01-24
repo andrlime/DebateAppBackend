@@ -291,7 +291,7 @@ router
 
 router
   .route("/get/alleval")
-  .get(async (req: Request, res: Response) => {
+  .post(async (req: Request, res: Response) => {
     const dbConnect = dbo.getDb();
     if (!req.body.apikey) {
       res.json({ status: "No API key" });
