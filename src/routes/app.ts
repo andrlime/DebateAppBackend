@@ -3,11 +3,14 @@ import conn from "../db/conn";
 import dotenv from "dotenv";
 import { ObjectId } from "mongodb";
 import { createHash } from "crypto";
+import { assert } from "console";
+import nodemailer from "nodemailer";
 
 type Judge = {
   name: string;
   email: string;
   evaluations: Evaluation[];
+  _id?: ObjectId
 };
 
 type Evaluation = {
@@ -28,6 +31,12 @@ type Evaluation = {
 dotenv.config();
 const router = express.Router();
 const dbo = conn;
+const [username, password]: [string, string] = [process.env.EMAIL_USERNAME || "", process.env.EMAIL_PASSWORD || ""];
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: { user: username, pass: password },
+});
 
 // if it works
 router.route("/test").get((_: Request, res: Response) => {
@@ -38,9 +47,9 @@ router.route("/test").get((_: Request, res: Response) => {
 // new auth
 router.route("/authy").post((req: Request, res: Response) => {
   const dbConnect = dbo.getDb();
-  let un = req.body.username;
-  let pw = req.body.password;
-  let hash = createHash("sha256").update(`${un}${pw}`).digest("hex");
+  const un = req.body.username;
+  const pw = req.body.password;
+  const hash = createHash("sha256").update(`${un}${pw}`).digest("hex");
 
   dbConnect
     .collection("auth")
@@ -55,9 +64,9 @@ router.route("/authy").post((req: Request, res: Response) => {
 
 router.route("/authy/:un/:pw").get((req: Request, res: Response) => {
   const dbConnect = dbo.getDb();
-  let un = req.params.un;
-  let pw = req.params.pw;
-  let hash = createHash("sha256").update(`${un}${pw}`).digest("hex");
+  const un = req.params.un;
+  const pw = req.params.pw;
+  const hash = createHash("sha256").update(`${un}${pw}`).digest("hex");
   dbConnect
     .collection("auth")
     .findOne(
@@ -276,6 +285,61 @@ router
                 }
               );
           });
+      }
+    }
+  });
+
+router
+  .route("/get/alleval")
+  .get(async (req: Request, res: Response) => {
+    const dbConnect = dbo.getDb();
+    if (!req.body.apikey) {
+      res.json({ status: "No API key" });
+    } else {
+      if (req.body.apikey !== process.env.APIKEY) {
+        res.json({ status: "Incorrect API key" });
+      } else {
+        // const email = req.body.email;
+        const email = "andrewli2048@gmail.com"
+        assert(email);
+
+        // Now, pull all judges and create a spreadsheet
+        dbConnect
+        .collection("judges")
+        .find({})
+        .toArray((err: Error, result: any) => { // ew, don't use any!
+          if (err) throw err;
+
+          // Found all judges!
+          let resultString = "id,judgeName,date,tournament,division,round,prelim,improvement,decision,comparison,citation,coverage,bias,weight\n";
+          const judges: Judge[] = result;
+
+          for(const j of judges) {
+            const ev = j.evaluations;
+            for(const evalu of ev) {
+              resultString+=`${j._id},${j.name},${evalu.date.toString()},${evalu.tournamentName},${evalu.divisionName},${evalu.roundName},${evalu.isPrelim},${evalu.isImprovement},${evalu.decision},${evalu.comparison},${evalu.citation},${evalu.coverage},${evalu.bias},${evalu.weight}\n`;
+            }
+          }
+
+          // Use Nodemailer to send an email
+          transporter.sendMail({
+              from: `"Andrew Li" <${process.env.EMAIL_USERNAME}>`, // sender address
+              to: `${email} <${email}>`, // list of receivers
+              subject: "NHSDLC Judge Evaluation System Export", // Subject line
+              html: `You have successfully exported all evaluations at ${new Date().toISOString()}. We have attached a spreadsheet.
+              `, // html body
+              attachments: [
+                {   // utf-8 string as an attachment
+                  filename: `export_${new Date().toISOString()}.csv`,
+                  content: resultString
+                }
+              ]
+          }).then(() => {
+            res.json({ status: "Okay" });
+          }).catch((error: Error) => {
+            res.json({ status: "Not okay" });
+          });
+        });
       }
     }
   });
