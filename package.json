@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
-    "build": "tsc",
-    "prestart": "npm run build",
+    "build": "yarn && tsc",
     "start": "node .",
     "dev": "tsc && nodemon ."
   },
