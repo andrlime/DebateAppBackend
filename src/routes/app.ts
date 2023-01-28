@@ -344,5 +344,38 @@ router
     }
   });
 
+// update paradigm
+// add evaluation
+// Judge UUID -> void
+router
+.route("/update/paradigm/:apikey/:judgeid")
+.post(async (req: Request, res: Response) => {
+  const dbConnect = dbo.getDb();
+  if (!req.params.apikey) {
+    res.json({ status: "No API key" });
+  } else {
+    if (req.params.apikey !== process.env.APIKEY) {
+      res.json({ status: "Incorrect API key" });
+    } else {
+      const query = { _id: new ObjectId(req.params.judgeid) };
+      const updParadigm = req.body.paradigm;
+
+      dbConnect
+        .collection("judges")
+        .updateOne(
+          query,
+          { $set: { paradigm: updParadigm } },
+          (error2: Error, resp: Response) => {
+            if (error2) throw error2;
+            res.json({
+              result: resp,
+              status: `Updated judge ${req.params.judgeid}`,
+            });
+          }
+        );
+    }
+  }
+});
+
 module.exports = router;
 export default router;
