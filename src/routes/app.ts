@@ -300,7 +300,7 @@ router
         res.json({ status: "Incorrect API key" });
       } else {
         // const email = req.body.email;
-        const email = "andrewli2048@gmail.com"
+        const email = req.body.email;
         assert(email);
 
         // Now, pull all judges and create a spreadsheet
