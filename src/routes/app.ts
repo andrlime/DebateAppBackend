@@ -304,17 +304,10 @@ router
           let overallResultString = "id,judgeName,email,decision,comparison,citation,coverage,bias,avg,stdev,z\n";
 
           for(const j of judges) {
-            overallResultString+=`${j._id},${j.name},${j.email},${computeMeanDecision(j)},${computeMeanComparison(j)},${computeMeanCitation(j)},${computeMeanCoverage(j)},${computeMeanBias(j)},${computeMean(j)},${computeStdev(j)},${computeZ(j,judges)}}\n`;
+            overallResultString+=`${j._id},${j.name},${j.email},${computeMeanDecision(j)},${computeMeanComparison(j)},${computeMeanCitation(j)},${computeMeanCoverage(j)},${computeMeanBias(j)},${computeMean(j)},${computeStdev(j) || 0},${computeZ(j,judges)}\n`;
           }
 
-          overallResultString+=`OVERALL,,,
-          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanDecision(current),0)/judges.length))/1000},
-          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanComparison(current),0)/judges.length))/1000},
-          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCitation(current),0)/judges.length))/1000},
-          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCoverage(current),0)/judges.length))/1000},
-          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanBias(current),0)/judges.length))/1000},
-          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMean(current),0)/judges.length))/1000}
-          ,,,`;
+          overallResultString+=`OVERALL,,,${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanDecision(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanComparison(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCitation(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCoverage(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanBias(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMean(current),0)/judges.length))/1000},,,`;
 
           // Use Nodemailer to send an email
           transporter.sendMail({
