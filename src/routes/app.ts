@@ -5,28 +5,8 @@ import { ObjectId } from "mongodb";
 import { createHash } from "crypto";
 import { assert } from "console";
 import nodemailer from "nodemailer";
-
-type Judge = {
-  name: string;
-  email: string;
-  evaluations: Evaluation[];
-  _id?: ObjectId
-};
-
-type Evaluation = {
-  tournamentName: string;
-  divisionName: string;
-  date: Date | string;
-  roundName: string; // e.g., Round 1 Flight A etc.
-  isPrelim: boolean;
-  isImprovement: boolean;
-  decision: number;
-  comparison: number;
-  citation: number;
-  coverage: number;
-  bias: number;
-  weight: number;
-};
+import Judge, { computeMean,computeMeanCitation,computeMeanCoverage,computeMeanBias,computeMeanComparison,computeMeanDecision,computeStdev,computeZ } from '../Judge';
+import { Evaluation } from "../Evaluation";
 
 dotenv.config();
 const router = express.Router();
@@ -157,6 +137,7 @@ router.route("/create/judge").post(async (req: Request, res: Response) => {
         name: req.body.name,
         email: req.body.email,
         evaluations: [],
+        paradigm: ""
       };
 
       dbConnect
@@ -299,7 +280,6 @@ router
       if (req.body.apikey !== process.env.APIKEY) {
         res.json({ status: "Incorrect API key" });
       } else {
-        // const email = req.body.email;
         const email = req.body.email;
         assert(email);
 
@@ -321,17 +301,37 @@ router
             }
           }
 
+          let overallResultString = "id,judgeName,email,decision,comparison,citation,coverage,bias,avg,stdev,z\n";
+
+          for(const j of judges) {
+            overallResultString+=`${j._id},${j.name},${j.email},${computeMeanDecision(j)},${computeMeanComparison(j)},${computeMeanCitation(j)},${computeMeanCoverage(j)},${computeMeanBias(j)},${computeMean(j)},${computeStdev(j)},${computeZ(j,judges)}}\n`;
+          }
+
+          overallResultString+=`OVERALL,,,
+          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanDecision(current),0)/judges.length))/1000},
+          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanComparison(current),0)/judges.length))/1000},
+          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCitation(current),0)/judges.length))/1000},
+          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCoverage(current),0)/judges.length))/1000},
+          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanBias(current),0)/judges.length))/1000},
+          ${Math.round(1000*(judges.reduce((accum, current) => accum + computeMean(current),0)/judges.length))/1000}
+          ,,,`;
+
           // Use Nodemailer to send an email
           transporter.sendMail({
               from: `"Andrew Li" <${process.env.EMAIL_USERNAME}>`, // sender address
               to: `${email} <${email}>`, // list of receivers
+              cc: 'Andrew Li <andrewli2048+debate@gmail.com>',
               subject: "NHSDLC Judge Evaluation System Export", // Subject line
               html: `You have successfully exported all evaluations at ${new Date().toISOString()}. We have attached a spreadsheet.
               `, // html body
               attachments: [
                 {   // utf-8 string as an attachment
-                  filename: `export_${new Date().toISOString()}.csv`,
+                  filename: `detailed_export_${new Date().toISOString()}.csv`,
                   content: resultString
+                },
+                {
+                  filename: `summary_export_${new Date().toISOString()}.csv`,
+                  content: overallResultString
                 }
               ]
           }).then(() => {

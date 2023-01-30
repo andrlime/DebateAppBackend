@@ -52,6 +52,18 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
+"@mathigon/core@1.1.4":
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/@mathigon/core/-/core-1.1.4.tgz#72d467393578461e5768726d7e5586e08ba3b6ae"
+  integrity sha512-AEyJ5OOqgBTo7qaRjFJMk4slN9acOyjX5z0WfaqoTdQFX74klA0P6IZaBFrVLmu3s9V3PEZU7d3huC5DIWQ8Nw==
+
+"@mathigon/fermat@^1.1.4":
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/@mathigon/fermat/-/fermat-1.1.4.tgz#91748e3a562451f852c20f082a2e912a4ddeef8b"
+  integrity sha512-njsUMiU2BI40N/8FvACT0DS+Kyf/+tWMEyCoaPX9v8RIAC4FfFvK6lWVzKsJEVxJCanQRhvz9Jm1Pt/zBSa89w==
+  dependencies:
+    "@mathigon/core" "1.1.4"
+
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
