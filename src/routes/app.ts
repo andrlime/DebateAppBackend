@@ -357,7 +357,7 @@ router
         .collection("judges")
         .updateOne(
           query,
-          { $set: { paradigm: updParadigm } },
+          { $set: { paradigm: updParadigm, options: req.body.options } },
           (error2: Error, resp: Response) => {
             if (error2) throw error2;
             res.json({
