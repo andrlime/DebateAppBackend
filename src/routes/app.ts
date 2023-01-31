@@ -353,7 +353,9 @@ router
       const query = { _id: new ObjectId(req.params.judgeid) };
       const updParadigm = req.body.paradigm;
 
-      dbConnect
+      if(updParadigm) {
+        // has a paradigm
+        dbConnect
         .collection("judges")
         .updateOne(
           query,
@@ -366,6 +368,23 @@ router
             });
           }
         );
+      } else {
+        dbConnect
+        .collection("judges")
+        .updateOne(
+          query,
+          { $set: { options: req.body.options } },
+          (error2: Error, resp: Response) => {
+            if (error2) throw error2;
+            res.json({
+              result: resp,
+              status: `Updated judge ${req.params.judgeid}`,
+            });
+          }
+        );
+      }
+
+      
     }
   }
 });
