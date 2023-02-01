@@ -353,7 +353,7 @@ router
       const query = { _id: new ObjectId(req.params.judgeid) };
       const updParadigm = req.body.paradigm;
 
-      if(updParadigm) {
+      if(updParadigm || req.body.updated) {
         // has a paradigm
         dbConnect
         .collection("judges")
