@@ -1,13 +1,15 @@
 import { ObjectId } from "mongodb";
 import { Evaluation } from "./Evaluation";
 import { stdDev } from '@mathigon/fermat';
+import Options from "./Options";
 
 export type Judge = {
-  _id?: ObjectId | string;
+  _id: ObjectId | string;
   name: string;
   email: string;
   evaluations: Evaluation[];
   paradigm: string;
+  options?: Options
 };
 
 // methods
@@ -30,30 +32,56 @@ export const computeStdev = (judge: Judge): number => {
   return (sumOfVariances / (partialList.length - 1)) ** 0.5;
 };
 
+const findFourMostRecents = (j: Judge) => {
+  // this assues the judge is sorted as it should be in the axios response
+  let strings: string[] = [];
+  let count = 0;
+  const AMOUNT_I_WANT = 4;
+  for(let ev of j.evaluations) {
+    if(strings.includes(ev.tournamentName)) continue;
+    else {
+      strings.push(ev.tournamentName);
+      count++;
+    }
+    if(count == AMOUNT_I_WANT) {
+      return strings;
+    }
+  }
+
+  return strings;
+}
+
 export const computeZ = (judge: Judge, judges: Judge[]): number => {
-  const W_AVG_ALLJUDGES = (judges.reduce((accum, current) => accum + computeMean(current),0)/judges.length);
-  const W_AVG_JUST_THIS_JUDGE = computeMean(judge);
+  const W_AVG_ALLJUDGES = (judges.reduce((accum, current) => accum + computeMean(current, findFourMostRecents(current)),0)/judges.length);
+  const W_AVG_JUST_THIS_JUDGE = computeMean(judge, findFourMostRecents(judge));
 
   let ARR_EVALS: number[] = [];
   judge.evaluations.forEach((e) => {
-    ARR_EVALS.push(e.bias+e.citation+e.comparison+e.coverage+e.decision);
+    let fmr = findFourMostRecents(judge);
+    if(fmr.includes(e.tournamentName)) {
+      ARR_EVALS.push(e.bias+e.citation+e.comparison+e.coverage+e.decision);
+    }
   });
 
   let ARR_ALL_EVALS: number[] = [];
   judges.forEach((f) => {
-    if(f.evaluations[0] && f.evaluations.length > 0) {
-      f.evaluations.forEach((e) => {
+    let fmr = findFourMostRecents(f);
+    f.evaluations.forEach((e) => {
+      if(fmr.includes(e.tournamentName)) {
         ARR_ALL_EVALS.push(e.bias+e.citation+e.comparison+e.coverage+e.decision);
-      });
-    }
+      }
+    });
   });
 
   // find stdev for both samples
   const SD_JUST_THIS_JUDGE = stdDev(ARR_EVALS);
   const SD_ALL_JUDGES = stdDev(ARR_ALL_EVALS);
+  const WEIGHT_OF_JUST_ME = 0.25;
 
-  return (W_AVG_JUST_THIS_JUDGE - W_AVG_ALLJUDGES) /
-    ((((SD_JUST_THIS_JUDGE**2)/ARR_EVALS.length) + ((SD_ALL_JUDGES**2)/ARR_ALL_EVALS.length))**0.5 + 1);
+  //let denominator = (SD_ALL_JUDGES**2 * ((1/(findFourMostRecents(judge).length) + ((SD_JUST_THIS_JUDGE) + 1/(judges.reduce((acc, cur) => acc + findFourMostRecents(cur).length,0)))))) ** 0.5;
+  //console.log(W_AVG_JUST_THIS_JUDGE, computeMean(judge, findFourMostRecents(judge)));
+  let ZZ = (W_AVG_JUST_THIS_JUDGE - W_AVG_ALLJUDGES) / ((1-WEIGHT_OF_JUST_ME)*SD_ALL_JUDGES + WEIGHT_OF_JUST_ME*SD_JUST_THIS_JUDGE);
+  return ZZ
 };
 
 export const computeMean = (j: Judge, f?: string[]): number => {
@@ -77,7 +105,8 @@ export const computeMean = (j: Judge, f?: string[]): number => {
 
     // now i have all the averages, so i want to average the averages
 
-    return averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    const G = averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    return isNaN(G) ? 0 : G;
   } else {
     // no filters, do all of them
     let wsum = 0;
@@ -115,7 +144,8 @@ export const computeMeanDecision = (j: Judge, f?: string[]): number => {
 
     // now i have all the averages, so i want to average the averages
 
-    return averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    const G = averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    return isNaN(G) ? 0 : G;
   } else {
     // no filters, do all of them
     let wsum = 0;
@@ -151,7 +181,8 @@ export const computeMeanCoverage = (j: Judge, f?: string[]): number => {
 
     // now i have all the averages, so i want to average the averages
 
-    return averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    const G = averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    return isNaN(G) ? 0 : G;
   } else {
     // no filters, do all of them
     let wsum = 0;
@@ -187,7 +218,8 @@ export const computeMeanCitation = (j: Judge, f?: string[]): number => {
 
     // now i have all the averages, so i want to average the averages
 
-    return averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    const G = averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    return isNaN(G) ? 0 : G;
   } else {
     // no filters, do all of them
     let wsum = 0;
@@ -223,7 +255,8 @@ export const computeMeanComparison = (j: Judge, f?: string[]): number => {
 
     // now i have all the averages, so i want to average the averages
 
-    return averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    const G = averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    return isNaN(G) ? 0 : G;
   } else {
     // no filters, do all of them
     let wsum = 0;
@@ -259,7 +292,8 @@ export const computeMeanBias = (j: Judge, f?: string[]): number => {
 
     // now i have all the averages, so i want to average the averages
 
-    return averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    const G = averages.reduce((acc, cur) => acc + cur, 0) / averages.length;
+    return isNaN(G) ? 0 : G;
   } else {
     // no filters, do all of them
     let wsum = 0;
