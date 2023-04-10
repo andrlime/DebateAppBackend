@@ -13,6 +13,26 @@ const router = express.Router();
 const dbo = conn;
 const [username, password]: [string, string] = [process.env.EMAIL_USERNAME || "", process.env.EMAIL_PASSWORD || ""];
 
+const findFourMostRecents = (j: Judge) => {
+  // this assues the judge is sorted as it should be in the axios response
+  j.evaluations = j.evaluations.sort((b: Evaluation, a: Evaluation) => (new Date(a.date)).getFullYear() - (new Date(b.date)).getFullYear() || (new Date(a.date)).getMonth() - (new Date(b.date.toString())).getMonth() || (new Date(a.date.toString())).getDate() - (new Date(b.date.toString())).getDate() || (new Date(a.date.toString())).getHours() - (new Date(b.date.toString())).getHours() || (new Date(a.date.toString())).getMinutes() - (new Date(b.date.toString())).getMinutes());
+  let strings: string[] = [];
+  let count = 0;
+  const AMOUNT_I_WANT = 4;
+  for(let ev of j.evaluations) {
+    if(strings.includes(ev.tournamentName)) continue;
+    else {
+      strings.push(ev.tournamentName);
+      count++;
+    }
+    if(count == AMOUNT_I_WANT) {
+      return strings;
+    }
+  }
+
+  return strings;
+}
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: { user: username, pass: password },
@@ -304,10 +324,10 @@ router
           let overallResultString = "id,judgeName,email,decision,comparison,citation,coverage,bias,avg,stdev,z\n";
 
           for(const j of judges) {
-            overallResultString+=`${j._id},${j.name},${j.email},${computeMeanDecision(j)},${computeMeanComparison(j)},${computeMeanCitation(j)},${computeMeanCoverage(j)},${computeMeanBias(j)},${computeMean(j)},${computeStdev(j) || 0},${computeZ(j,judges)}\n`;
+            overallResultString+=`${j._id},${j.name},${j.email},${computeMeanDecision(j,findFourMostRecents(j))},${computeMeanComparison(j,findFourMostRecents(j))},${computeMeanCitation(j,findFourMostRecents(j))},${computeMeanCoverage(j,findFourMostRecents(j))},${computeMeanBias(j,findFourMostRecents(j))},${computeMean(j,findFourMostRecents(j))},${computeStdev(j) || 0},${computeZ(j,judges)}\n`;
           }
 
-          overallResultString+=`OVERALL,,,${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanDecision(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanComparison(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCitation(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCoverage(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanBias(current),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMean(current),0)/(judges.filter((e) => e.evaluations.length > 0).length)))/1000},,,`;
+          overallResultString+=`OVERALL,,,${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanDecision(current,findFourMostRecents(current)),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanComparison(current,findFourMostRecents(current)),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCitation(current,findFourMostRecents(current)),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanCoverage(current,findFourMostRecents(current)),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMeanBias(current,findFourMostRecents(current)),0)/judges.length))/1000},${Math.round(1000*(judges.reduce((accum, current) => accum + computeMean(current,findFourMostRecents(current)),0)/(judges.filter((e) => e.evaluations.length > 0).length)))/1000},,,`;
 
           // Use Nodemailer to send an email
           transporter.sendMail({
