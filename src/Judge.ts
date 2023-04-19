@@ -12,11 +12,14 @@ export type Judge = {
 
 // methods
 export const computeStdev = (judge: Judge): number => {
+  let fmr = findFourMostRecents(judge);
   const partialList = [];
   for (const i of judge.evaluations) {
-    partialList.push(
-      i.bias + i.citation + i.comparison + i.coverage + i.decision
-    );
+    if(fmr.includes(i.tournamentName)) {
+      partialList.push(
+        i.bias + i.citation + i.comparison + i.coverage + i.decision
+      );
+    }
   }
 
   // compute stdev of that list
